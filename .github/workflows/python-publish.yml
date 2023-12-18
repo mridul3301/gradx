@@ -1,45 +1,35 @@
-name: "CodeQL"
+name: PythonPackage
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths-ignore:
-      - "*.md"
-      - ".gitignore"
+    tags:
+      - "*"
 
 jobs:
-  analyze:
-    name: CodeQL Analysis
+  publish:
+    name: Build and Deploy to PyPi
     runs-on: ubuntu-latest
-
     strategy:
-      fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        # build/push in lowest support python version
+        python-version: [ "3.11" ]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: ${{ matrix.language }}
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+    - name: Setup and Build
+      run: |
+        pip install -U pip .[setup]
+        python -m build
+        python -m twine check dist/*
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Pre Commit Checks
-        uses: pre-commit/action@v3.0.0
-
-      - name: Unit Tests
-        run: |
-          pip install -U pip .[dev]
-          pytest -v tests/
+    - name: Build and publish
+      uses: pypa/gh-action-pypi-publish@v1.8.10
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_TOKEN }}
+        skip_existing: true

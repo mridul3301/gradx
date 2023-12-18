@@ -1,6 +1,7 @@
 import numpy as np
 
-class xopl:
+
+class Xopl:
     def __init__(self):
         pass
 
